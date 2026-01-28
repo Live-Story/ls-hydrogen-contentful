@@ -19,6 +19,38 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
+    imgSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://assets.livestory.io',
+      'mediacdn.livestory.io',
+      'mediastorage.livestory.io'
+    ],
+    mediaSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://assets.livestory.io',
+      'mediacdn.livestory.io',
+      'mediastorage.livestory.io'
+    ],
+    scriptSrc: [
+      "'self'",
+      "'unsafe-inline'",
+      'https://cdn.shopify.com',
+      'https://assets.livestory.io',
+      'https://cdnjs.cloudflare.com'
+    ],
+    styleSrc: [
+      "'self'",
+      "'unsafe-inline'",
+      "https://assets.livestory.io"
+    ],
+    connectSrc: [
+      "'self'",
+      'https://cdn.shopify.com',  
+      'api.livestory.io',
+      'assets.livestory.io'
+    ],
   });
 
   const body = await renderToReadableStream(

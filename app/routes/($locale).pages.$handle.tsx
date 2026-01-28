@@ -38,6 +38,7 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
     throw new Response('Not Found', {status: 404});
   }
 
+
   redirectIfHandleIsLocalized(request, {handle: params.handle, data: page});
 
   return {
@@ -86,3 +87,16 @@ const PAGE_QUERY = `#graphql
     }
   }
 ` as const;
+
+const query = `
+    query{
+        LiveStoryCollection{
+            items{
+                title
+                id
+                type
+                ssc
+            }
+        }
+    }
+  `;

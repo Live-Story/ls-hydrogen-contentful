@@ -7,6 +7,7 @@ import type {
   RecommendedProductsQuery,
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
+import { LiveStoryItem } from '~/components/LiveStoryItem';
 
 export const meta: Route.MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
@@ -43,6 +44,11 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context}: Route.LoaderArgs) {
+
+  const SPACE_ID = context.env.CONTENTFUL_SPACE_ID;
+  const ACCESS_TOKEN = context.env.CONTENTFUL_ACCESS_TOKEN;
+  const CONTENTFUL_URL = `https://graphql.contentful.com/content/v1/spaces/${SPACE_ID}`;
+
   const recommendedProducts = context.storefront
     .query(RECOMMENDED_PRODUCTS_QUERY)
     .catch((error: Error) => {
@@ -51,8 +57,33 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       return null;
     });
 
+  const entries: Promise<ContentfulResponse> = fetch(CONTENTFUL_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+      body: JSON.stringify({query: `
+        query{
+          liveStoryContentTypeCollection (limit: 8) {
+              items{
+                  sys {
+                    id
+                  }
+                  title
+                  id
+                  type
+                  ssc
+                  coverImg
+              }
+          }
+        }
+      `}),
+    }).then(res => res.json() as Promise<ContentfulResponse>);
+
   return {
     recommendedProducts,
+    entries,
   };
 }
 
@@ -60,8 +91,19 @@ export default function Homepage() {
   const data = useLoaderData<typeof loader>();
   return (
     <div className="home">
-      <FeaturedCollection collection={data.featuredCollection} />
-      <RecommendedProducts products={data.recommendedProducts} />
+      {/** <FeaturedCollection collection={data.featuredCollection} /> **/}
+      <div className="livestory-entries">
+        <LiveStoryEntries entries={data.entries} />
+        <div className="text-center">
+          <Link
+            className="text-center"
+            to={`/contentful/entries/livestory`}
+          >
+            <b>Discover more</b>
+          </Link>
+        </div>
+        <RecommendedProducts products={data.recommendedProducts} />
+      </div>
     </div>
   );
 }
@@ -103,6 +145,50 @@ function RecommendedProducts({
               {response
                 ? response.products.nodes.map((product) => (
                     <ProductItem key={product.id} product={product} />
+                  ))
+                : null}
+            </div>
+          )}
+        </Await>
+      </Suspense>
+      <br />
+    </div>
+  );
+}
+
+
+type LiveStoryItem = {
+  id: string;
+  title: string;
+  type: string;
+  ssc: string | null;
+  sys: { id: string };
+  coverImg: string;
+};
+
+type ContentfulResponse = {
+  data?: {
+    liveStoryContentTypeCollection?: {
+      items: LiveStoryItem[];
+    };
+  };
+};
+
+function LiveStoryEntries({
+  entries,
+}: {
+  entries: Promise<ContentfulResponse>;
+}) {
+  return (
+    <div className="livestory-entries">
+      <h2>Live Story Contentful experiences</h2>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Await resolve={entries}>
+          {(response) => (
+            <div className="livestory-entries-grid">
+              {response
+                ? response.data?.liveStoryContentTypeCollection?.items.map((item) => (
+                    <LiveStoryItem key={item.id} item={item} />
                   ))
                 : null}
             </div>
